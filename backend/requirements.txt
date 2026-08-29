@@ -1,0 +1,31 @@
+# ---------------------------------------------------------------------------
+# Runtime dependencies. Installs with a single:
+#
+#     pip install -r requirements.txt
+#
+# The extra index below is what keeps torch to the ~200 MB CPU build. Without
+# it, pip resolves torch from PyPI and pulls the ~2.5 GB CUDA build, which
+# exceeds the build limits on Render/Railway free tiers.
+#
+# The `+cpu` local-version pins exist only for Linux wheels. On macOS or
+# Windows, drop the `+cpu` suffix and the --extra-index-url line (those
+# platforms ship CPU-only wheels on PyPI already).
+#
+# On a CUDA host, replace the index with the matching CUDA channel from
+# https://pytorch.org/get-started/locally/ and drop the `+cpu` suffixes.
+# ---------------------------------------------------------------------------
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# --- Model runtime ---------------------------------------------------------
+torch==2.13.0+cpu
+torchvision==0.28.0+cpu
+
+# --- API -------------------------------------------------------------------
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+python-multipart==0.0.32          # required for multipart/form-data uploads
+pydantic==2.13.5
+pydantic-settings==2.15.0
+
+# --- Imaging ---------------------------------------------------------------
+pillow==12.3.0
