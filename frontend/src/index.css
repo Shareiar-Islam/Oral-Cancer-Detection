@@ -1,0 +1,75 @@
+@import 'tailwindcss';
+
+/* Dark clinical theme.
+   Semantic tokens rather than a numeric ramp, so component classes say what a
+   colour is for (surface, line, ink) instead of how dark it is. */
+@theme {
+  /* Structure — page, panels, raised panels, hairlines */
+  --color-canvas: #0b0f14;
+  --color-surface: #131a22;
+  --color-raised: #1b232d;
+  --color-line: #263140;
+  --color-line-soft: #1d2733;
+
+  /* Text */
+  --color-ink: #e9eef4;
+  --color-muted: #97a5b6;
+  --color-faint: #8593a6;
+
+  /* Primary action — light on dark, the only bright block in the layout */
+  --color-accent: #f2f6fa;
+  --color-accent-hover: #ffffff;
+  --color-on-accent: #0b0f14;
+
+  /* Reserved for a positive (Cancer) finding, and nothing else */
+  --color-alert: #ee6d5f;
+  --color-alert-strong: #c0392c;
+  --color-alert-deep: #2e100e;
+  --color-alert-tint: #2a1310;
+
+  /* Advisory (the standing disclaimer) */
+  --color-warn: #e0b341;
+  --color-warn-tint: #2a2213;
+  --color-warn-line: #4a3c1c;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-canvas text-ink antialiased;
+}
+
+/* Panels ease in rather than snapping into place. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-rise {
+  animation: rise 0.28s ease-out both;
+}
+
+/* Selection stays legible against the dark ground. */
+::selection {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
