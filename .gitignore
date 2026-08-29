@@ -1,0 +1,27 @@
+# Model weights -- never commit. May be large and is project-sensitive.
+backend/models/*
+!backend/models/.gitkeep
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Env
+.env
+.env.local
+
+# Node
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+.vercel/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

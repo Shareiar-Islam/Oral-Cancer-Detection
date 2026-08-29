@@ -1,0 +1,53 @@
+# Frontend .gitignore
+# Scoped to this directory so it still applies when the app is deployed with
+# `frontend` as the project root (Vercel), where the repo-root .gitignore is
+# not necessarily in play.
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+dist-ssr/
+build/
+*.local
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Environment -- .env holds the API URL; keep .env.example tracked
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Vercel
+.vercel
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# Test / coverage output
+coverage/
+.nyc_output/
+
+# Caches
+.eslintcache
+.cache/
+.temp/
+.vite/
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp

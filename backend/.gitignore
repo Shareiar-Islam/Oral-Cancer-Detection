@@ -1,0 +1,77 @@
+# Backend .gitignore
+# Scoped to this directory so it still applies when the app is deployed with
+# `backend` as the project root (Render/Railway), where the repo-root
+# .gitignore is not necessarily in play.
+
+# ---------------------------------------------------------------------------
+# Model weights -- NEVER commit.
+# Large, project-specific, and derived from potentially sensitive data.
+# Deploy them via MODEL_URL instead (see README -> Deployment).
+# ---------------------------------------------------------------------------
+models/*
+!models/.gitkeep
+
+# Any checkpoint that wanders in elsewhere
+*.pkl
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+*.onnx
+
+# ---------------------------------------------------------------------------
+# Patient data -- must never reach the repository.
+# The service itself never writes uploads to disk; this guards against test
+# images or exports being added by hand.
+# ---------------------------------------------------------------------------
+uploads/
+data/
+samples/
+*.dcm
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python bytecode / packaging
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Environment -- .env holds paths and origins; keep .env.example tracked
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Test / type-check caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.hypothesis/
+
+# Diagnostic output from scripts/inspect_model.py --json
+report.json
+*.report.json
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Jupyter
+.ipynb_checkpoints/
