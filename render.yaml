@@ -1,0 +1,39 @@
+# Render blueprint. Point a new Blueprint at this repo and it provisions the
+# backend; the frontend goes to Vercel separately.
+#
+# Set these in the Render dashboard after the first deploy:
+#   MODEL_URL       direct-download link to the .pkl (weights are gitignored)
+#   MODEL_SHA256    optional integrity check -- `sha256sum <your>.pkl`
+#   ALLOWED_ORIGINS your Vercel production URL
+services:
+  - type: web
+    name: oral-cancer-api
+    runtime: python
+    plan: starter          # free tier's 512 MB RAM is too tight for torch
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: DEVICE
+        value: cpu
+      - key: THRESHOLD
+        value: "0.5"
+      - key: POSITIVE_CLASS_INDEX
+        value: "1"
+      - key: MODEL_OUTPUTS_PROBABILITY
+        value: "false"
+      - key: MODEL_PATH
+        value: models/EfficientNetB0_Dataset02_OralCancer_EXP4A.pkl
+      # Set in the dashboard, not here -- keeps the URL out of git.
+      - key: MODEL_URL
+        sync: false
+      - key: MODEL_SHA256
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      # Matches Vercel preview deployments, which get a new host per commit.
+      - key: ALLOWED_ORIGIN_REGEX
+        sync: false
