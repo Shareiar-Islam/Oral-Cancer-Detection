@@ -1,36 +1,40 @@
 @import 'tailwindcss';
 
-/* Dark clinical theme.
-   Semantic tokens rather than a numeric ramp, so component classes say what a
-   colour is for (surface, line, ink) instead of how dark it is. */
+/* Palette adopted from the reference project: deep navy ground, cyan primary
+   with a violet secondary, used as a gradient on the one primary action and on
+   the probability fill.
+
+   Two values were adjusted for legibility. The reference `--muted: #5a6a80`
+   measures 3.07:1 on panels, below the 4.5:1 WCAG AA needs for normal text, so
+   muted/faint are lightened within the same hue family. Everything else --
+   background, surfaces, accent, text -- is unchanged. */
 @theme {
-  /* Structure — page, panels, raised panels, hairlines */
-  --color-canvas: #0b0f14;
-  --color-surface: #131a22;
-  --color-raised: #1b232d;
-  --color-line: #263140;
-  --color-line-soft: #1d2733;
+  --color-canvas: #080c14;
+  --color-surface: #0e1520;
+  --color-raised: #141d2b;
+  --color-line: #1e2a3d;
+  --color-line-soft: #161f2e;
 
-  /* Text */
-  --color-ink: #e9eef4;
-  --color-muted: #97a5b6;
-  --color-faint: #8593a6;
+  --color-ink: #e8edf5;
+  --color-muted: #8a9cb3;
+  --color-faint: #7d90a8;
 
-  /* Primary action — light on dark, the only bright block in the layout */
-  --color-accent: #f2f6fa;
-  --color-accent-hover: #ffffff;
-  --color-on-accent: #0b0f14;
+  --color-accent: #00d4ff;
+  --color-accent2: #7c5cfc;
+  --color-on-accent: #000000;
 
-  /* Reserved for a positive (Cancer) finding, and nothing else */
-  --color-alert: #ee6d5f;
-  --color-alert-strong: #c0392c;
-  --color-alert-deep: #2e100e;
-  --color-alert-tint: #2a1310;
+  /* Reserved for a positive (Cancer) finding, and nothing else. */
+  --color-alert: #ff6b5e;
+  --color-alert-strong: #b03a30;
+  --color-alert-deep: #2b1013;
+  --color-alert-tint: #221016;
 
-  /* Advisory (the standing disclaimer) */
-  --color-warn: #e0b341;
-  --color-warn-tint: #2a2213;
-  --color-warn-line: #4a3c1c;
+  --color-warn: #f0b429;
+  --color-warn-tint: #241d10;
+  --color-warn-line: #423418;
+
+  --font-display: 'Syne', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
 html {
@@ -40,13 +44,59 @@ html {
 
 body {
   @apply bg-canvas text-ink antialiased;
+  font-family: var(--font-sans);
+  /* Two faint pools of accent light, fixed to the viewport so the page has
+     depth without any element carrying a gradient of its own. */
+  background-image:
+    radial-gradient(60rem 40rem at 12% -10%, rgba(0, 212, 255, 0.07), transparent 60%),
+    radial-gradient(50rem 35rem at 95% 0%, rgba(124, 92, 252, 0.06), transparent 60%);
+  background-attachment: fixed;
 }
 
-/* Panels ease in rather than snapping into place. */
+h1,
+h2,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* The single primary action: cyan-to-violet, dark text, and a glow that
+   intensifies on hover. Used once per screen. */
+.btn-primary {
+  background-image: linear-gradient(135deg, var(--color-accent), var(--color-accent2));
+  box-shadow: 0 0 0 rgba(0, 212, 255, 0);
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.15s ease,
+    filter 0.25s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 0 32px rgba(0, 212, 255, 0.28);
+  filter: brightness(1.06);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.btn-primary:disabled {
+  background-image: none;
+}
+
+/* Accent-tinted lift for interactive panels. */
+.glow-accent {
+  box-shadow: 0 0 40px rgba(0, 212, 255, 0.13);
+}
+
+.glow-alert {
+  box-shadow: 0 0 40px rgba(255, 107, 94, 0.13);
+}
+
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -55,10 +105,9 @@ body {
 }
 
 .animate-rise {
-  animation: rise 0.28s ease-out both;
+  animation: rise 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Selection stays legible against the dark ground. */
 ::selection {
   background: var(--color-accent);
   color: var(--color-on-accent);

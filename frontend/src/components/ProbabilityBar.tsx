@@ -37,13 +37,16 @@ export function ProbabilityBar({
       <div
         role="img"
         aria-label={`Probability of cancer: ${probability.toFixed(2)}. Decision threshold: ${threshold.toFixed(2)}.`}
-        className="relative h-2.5 w-full overflow-hidden rounded-full bg-canvas ring-1 ring-inset ring-line"
+        className="relative h-3 w-full overflow-hidden rounded-full bg-canvas ring-1 ring-inset ring-line"
       >
         <div
-          className={`h-full rounded-full transition-[width] duration-700 ease-out ${
-            isPositive ? 'bg-alert' : 'bg-accent'
-          }`}
-          style={{ width: `${percent}%` }}
+          className="h-full rounded-full transition-[width] duration-1000 ease-out"
+          style={{
+            width: `${percent}%`,
+            backgroundImage: isPositive
+              ? 'linear-gradient(90deg, #b03a30, #ff6b5e)'
+              : 'linear-gradient(90deg, var(--color-accent), var(--color-accent2))',
+          }}
         />
         {/* Threshold marker sits above the fill so it stays visible either side. */}
         <div

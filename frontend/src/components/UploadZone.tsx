@@ -87,7 +87,7 @@ export function UploadZone({ onFileSelected, disabled }: UploadZoneProps): JSX.E
           disabled
             ? 'cursor-not-allowed bg-surface/50 ring-line-soft'
             : isDragging
-              ? 'scale-[1.01] cursor-copy bg-raised ring-2 ring-accent'
+              ? 'scale-[1.01] cursor-copy bg-raised ring-2 ring-accent glow-accent'
               : 'cursor-pointer bg-surface ring-line hover:bg-raised hover:ring-faint',
         ].join(' ')}
       >
@@ -95,7 +95,7 @@ export function UploadZone({ onFileSelected, disabled }: UploadZoneProps): JSX.E
         <span
           aria-hidden="true"
           className={`pointer-events-none absolute inset-3 rounded-xl border border-dashed transition-colors ${
-            isDragging ? 'border-accent/50' : 'border-line'
+            isDragging ? 'border-accent/40' : 'border-line'
           }`}
         />
 
@@ -105,8 +105,8 @@ export function UploadZone({ onFileSelected, disabled }: UploadZoneProps): JSX.E
             disabled
               ? 'bg-raised text-faint'
               : isDragging
-                ? 'scale-110 bg-accent text-on-accent'
-                : 'bg-raised text-muted group-hover:bg-accent group-hover:text-on-accent'
+                ? 'scale-110 text-on-accent [background-image:linear-gradient(135deg,var(--color-accent),var(--color-accent2))]'
+                : 'bg-raised text-muted group-hover:text-on-accent group-hover:[background-image:linear-gradient(135deg,var(--color-accent),var(--color-accent2))]'
           }`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-6 w-6">
@@ -118,7 +118,7 @@ export function UploadZone({ onFileSelected, disabled }: UploadZoneProps): JSX.E
           </svg>
         </span>
 
-        <p className="relative text-base font-semibold tracking-tight text-ink">
+        <p className="font-display relative text-lg font-bold tracking-tight text-ink">
           {isDragging ? 'Release to upload' : 'Drop a photograph here'}
         </p>
         <p className="relative mt-1.5 text-sm text-muted">

@@ -61,11 +61,11 @@ export default function App(): JSX.Element {
     <div className="min-h-screen bg-canvas">
       {/* <DisclaimerBanner /> */}
 
-      <header className="border-b border-line bg-surface">
+      <header className="border-b border-line bg-surface/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-5 sm:px-6">
           <span
             aria-hidden="true"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-on-accent"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-on-accent" style={{ backgroundImage: 'linear-gradient(135deg, var(--color-accent), var(--color-accent2))' }}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-5 w-5">
               <circle cx="11" cy="11" r="6.5" />
@@ -73,7 +73,7 @@ export default function App(): JSX.Element {
             </svg>
           </span>
           <div className="min-w-0">
-            <h1 className="text-lg font-semibold tracking-tight text-ink">
+            <h1 className="font-display text-xl font-bold tracking-tight text-ink">
               Oral Cancer Classifier
             </h1>
             <p className="mt-0.5 truncate text-sm text-muted">
@@ -167,8 +167,9 @@ export default function App(): JSX.Element {
 
       <footer className="mx-auto max-w-5xl px-4 pb-10 sm:px-6">
         <p className="border-t border-line-soft pt-6 text-xs leading-relaxed text-faint">
-          Uploaded images are processed in memory and are never written to disk or retained
-          by the server. This is a research prototype; see the notice at the top of the page.
+          Research prototype — not a diagnostic device. Not validated for clinical use;
+          output must not replace evaluation by a qualified clinician. Uploaded images are
+          processed in memory and are never written to disk or retained by the server.
         </p>
       </footer>
     </div>

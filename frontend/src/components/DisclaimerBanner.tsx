@@ -1,16 +1,19 @@
 /**
- * Persistent and non-dismissible by design. The tool produces a clinical-
- * sounding verdict, so the limits of that verdict must be visible at the same
- * time as the result — never behind a dismissed banner.
+ * Persistent and non-dismissible by design. The tool produces a
+ * clinical-sounding verdict, so the limits of that verdict must be visible at
+ * the same time as the result — never behind something the user dismissed.
+ *
+ * Styled to sit inside the dark theme rather than interrupt it: a thin rule,
+ * muted amber text, no filled bar.
  */
 export function DisclaimerBanner(): JSX.Element {
   return (
-    <div role="note" className="border-b border-warn-line bg-warn-tint px-4 py-3 sm:px-6">
-      <div className="mx-auto flex max-w-5xl items-start gap-2.5">
+    <div role="note" className="border-b border-line bg-surface/40 px-4 py-2.5 sm:px-6">
+      <div className="mx-auto flex max-w-5xl items-center gap-2.5">
         <svg
           aria-hidden="true"
           viewBox="0 0 20 20"
-          className="mt-0.5 h-4 w-4 shrink-0 text-warn"
+          className="h-3.5 w-3.5 shrink-0 text-warn"
           fill="currentColor"
         >
           <path
@@ -19,15 +22,12 @@ export function DisclaimerBanner(): JSX.Element {
             clipRule="evenodd"
           />
         </svg>
-        <p className="text-xs leading-relaxed text-warn/90 sm:text-sm">
-          <span className="font-semibold text-warn">
-            Research prototype — not a diagnostic device.
-          </span>{' '}
-          This model has not been validated for clinical use and is not approved by any
-          regulatory body. Its output must not be used for clinical decisions, and must
-          not replace examination, biopsy, or diagnosis by a qualified clinician. Any oral
-          lesion of concern warrants professional assessment regardless of what this tool
-          reports.
+        <p className="text-[11px] leading-relaxed text-muted sm:text-xs">
+          <span className="font-semibold text-warn">Research prototype — not a diagnostic device.</span>{' '}
+          <span className="hidden sm:inline">
+            Not validated for clinical use. Output must not be used for clinical decisions
+            or replace evaluation by a qualified clinician.
+          </span>
         </p>
       </div>
     </div>

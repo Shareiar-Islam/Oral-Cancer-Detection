@@ -11,7 +11,7 @@ export function AnalyzeButton({ onClick, disabled, isLoading }: AnalyzeButtonPro
       onClick={onClick}
       disabled={disabled || isLoading}
       aria-busy={isLoading}
-      className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-accent px-4 py-3.5 text-sm font-semibold tracking-tight text-on-accent transition-all hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-raised disabled:text-faint"
+      className="btn-primary font-display flex w-full items-center justify-center gap-2.5 rounded-2xl px-4 py-4 text-sm font-bold tracking-tight text-on-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:bg-raised disabled:text-faint"
     >
       {isLoading ? (
         <>

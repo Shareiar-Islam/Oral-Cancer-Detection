@@ -17,9 +17,9 @@ function DetailRow({ label, value }: { label: string; value: string }): JSX.Elem
 
 function StatTile({ label, value, unit }: { label: string; value: string; unit?: string }): JSX.Element {
   return (
-    <div className="rounded-xl bg-canvas px-3.5 py-3 ring-1 ring-inset ring-line-soft">
+    <div className="rounded-2xl bg-canvas/60 px-4 py-3.5 ring-1 ring-inset ring-line">
       <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">{label}</p>
-      <p className="mt-1 font-mono text-lg font-semibold tabular-nums text-ink">
+      <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums text-ink">
         {value}
         {unit && <span className="ml-1 text-xs font-normal text-faint">{unit}</span>}
       </p>
@@ -38,17 +38,26 @@ export function ResultCard({ result }: ResultCardProps): JSX.Element {
     <section
       aria-labelledby="result-heading"
       className={`animate-rise overflow-hidden rounded-2xl bg-surface ring-1 ${
-        isPositive ? 'ring-alert-strong' : 'ring-line'
+        isPositive ? 'ring-alert-strong glow-alert' : 'ring-line glow-accent'
       }`}
     >
       {/* On a dark ground the verdict is set apart by a tinted band and a
           coloured rule, not by brightness alone. */}
       <div
-        className={`border-b px-6 py-6 ${
-          isPositive ? 'border-alert-strong bg-alert-deep' : 'border-line bg-raised'
-        }`}
+        className={`relative px-6 py-7 ${isPositive ? 'bg-alert-deep' : 'bg-raised'}`}
       >
-        <div className="flex items-start justify-between gap-4">
+        {/* Gradient hairline instead of a flat border: the one place the
+            accent pair reappears outside the primary action. */}
+        <span
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-px"
+          style={{
+            backgroundImage: isPositive
+              ? 'linear-gradient(90deg, transparent, #ff6b5e, transparent)'
+              : 'linear-gradient(90deg, transparent, var(--color-accent), var(--color-accent2), transparent)',
+          }}
+        />
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
           <div className="min-w-0">
             <h2
               id="result-heading"
@@ -60,7 +69,7 @@ export function ResultCard({ result }: ResultCardProps): JSX.Element {
             </h2>
             <p
               aria-live="polite"
-              className={`mt-1.5 text-4xl font-semibold tracking-tight ${
+              className={`font-display mt-2 whitespace-nowrap text-[2rem] font-extrabold leading-none tracking-tight sm:text-[2.5rem] ${
                 isPositive ? 'text-alert' : 'text-ink'
               }`}
             >
@@ -72,7 +81,7 @@ export function ResultCard({ result }: ResultCardProps): JSX.Element {
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold tracking-wide ring-1 ${
               isPositive
                 ? 'bg-alert-tint text-alert ring-alert-strong'
-                : 'bg-canvas text-muted ring-line'
+                : 'bg-canvas text-accent ring-accent/30'
             }`}
           >
             {(result.confidence * 100).toFixed(1)}% confident
