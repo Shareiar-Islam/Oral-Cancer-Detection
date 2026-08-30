@@ -121,22 +121,6 @@ function Bullets({
 export function InfoPanels(): JSX.Element {
   return (
     <div className="mt-10 space-y-5">
-      <Panel title="Signs worth getting checked" tone="warn">
-        <ul className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-          {WARNING_SIGNS.map((sign) => (
-            <li key={sign.title}>
-              <h3 className="mb-1 text-xs font-semibold text-ink">{sign.title}</h3>
-              <p className="text-xs leading-relaxed text-muted">{sign.body}</p>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-4 border-t border-line-soft pt-3 text-xs leading-relaxed text-warn">
-          Most mouth sores are harmless and settle within two weeks. Anything that
-          persists beyond that should be looked at by a dentist or doctor — early
-          detection is what changes outcomes.
-        </p>
-      </Panel>
-
       <div className="grid gap-5 lg:grid-cols-2">
         <Panel title="What raises risk">
           <Bullets items={RISK_FACTORS} dot="bg-warn" />

@@ -167,14 +167,6 @@ export default function App(): JSX.Element {
 
         <InfoPanels />
       </main>
-
-      <footer className="mx-auto max-w-5xl px-4 pb-10 sm:px-6">
-        <p className="border-t border-line-soft pt-6 text-xs leading-relaxed text-faint">
-          Research prototype — not a diagnostic device. Not validated for clinical use;
-          output must not replace evaluation by a qualified clinician. Uploaded images are
-          processed in memory and are never written to disk or retained by the server.
-        </p>
-      </footer>
     </div>
   );
 }
