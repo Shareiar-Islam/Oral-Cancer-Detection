@@ -25,6 +25,7 @@ import io
 import logging
 import pickle
 import time
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -299,6 +300,53 @@ def _titlecase(name: str) -> str:
 # --------------------------------------------------------------------------
 # Load
 # --------------------------------------------------------------------------
+class _SameHostAuthRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Drop the Authorization header when a redirect crosses to another host.
+
+    Hugging Face (and most object stores) answer a download with a 302 to a CDN
+    on a different domain, carrying a pre-signed query string that already
+    authorises the fetch. urllib's default handler forwards every header, so the
+    bearer token would be sent to that third-party host despite being neither
+    needed nor intended for it. Browsers and `requests` both strip credentials
+    on cross-origin redirects; this does the same.
+    """
+
+    def redirect_request(  # noqa: D102 - inherited contract
+        self,
+        req: urllib.request.Request,
+        fp: object,
+        code: int,
+        msg: str,
+        headers: object,
+        newurl: str,
+    ) -> urllib.request.Request | None:
+        new_request = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new_request is None:
+            return None
+
+        original_host = urllib.parse.urlparse(req.full_url).netloc
+        new_host = urllib.parse.urlparse(newurl).netloc
+        if original_host != new_host:
+            # Request.headers keys are capitalised by add_header().
+            for key in list(new_request.headers):
+                if key.lower() == "authorization":
+                    del new_request.headers[key]
+                    logger.debug(
+                        "Dropped Authorization header on redirect to %s", new_host
+                    )
+        return new_request
+
+
+def _urlopen(request: urllib.request.Request, timeout: float = 300.0) -> Any:
+    """Open a URL, dropping credentials on any cross-host redirect.
+
+    A single named seam for the network call, so tests can substitute it
+    without silently reaching the internet.
+    """
+    opener = urllib.request.build_opener(_SameHostAuthRedirectHandler())
+    return opener.open(request, timeout=timeout)
+
+
 def _redact(url: str) -> str:
     """Strip the query string so a presigned URL's signature stays out of logs."""
     return url.split("?", 1)[0] + ("?<redacted>" if "?" in url else "")
@@ -338,7 +386,7 @@ def ensure_checkpoint(settings: Settings) -> Path:
         logger.info("Using MODEL_AUTH_TOKEN for the checkpoint download.")
 
     try:
-        with urllib.request.urlopen(request, timeout=300) as response:  # noqa: S310
+        with _urlopen(request, timeout=300) as response:
             content_type = response.headers.get("Content-Type", "")
             if "text/html" in content_type:
                 raise ModelLoadError(

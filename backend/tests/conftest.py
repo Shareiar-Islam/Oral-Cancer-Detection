@@ -75,6 +75,28 @@ def make_image_bytes(
 
 
 @pytest.fixture(autouse=True)
+def _no_network(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fail any test that opens a real network connection.
+
+    The download tests substitute a fake transport. When the production code
+    changed which function performs the request, those substitutions silently
+    stopped applying and the suite began contacting the internet instead of
+    failing -- tests that pass for the wrong reason, and would break offline or
+    in CI. This makes that mistake loud rather than invisible.
+    """
+    import socket
+
+    def blocked(*args: object, **kwargs: object) -> None:
+        raise AssertionError(
+            "A test attempted a real network connection. Substitute the "
+            "transport (see model_loader._urlopen) instead of reaching out."
+        )
+
+    monkeypatch.setattr(socket.socket, "connect", blocked)
+    monkeypatch.setattr(socket, "create_connection", blocked)
+
+
+@pytest.fixture(autouse=True)
 def _clear_model_state() -> Iterator[None]:
     """Guarantee no test leaks a loaded model into the next."""
     yield

@@ -331,10 +331,7 @@ def test_checkpoint_is_downloaded_when_absent(tmp_path: Path, monkeypatch: pytes
         def __exit__(self, *args: object) -> None:
             self.close()
 
-    monkeypatch.setattr(
-        model_loader.urllib.request, "urlopen",
-        lambda *a, **k: FakeResponse(payload),
-    )
+    monkeypatch.setattr(model_loader, "_urlopen", lambda *a, **k: FakeResponse(payload))
 
     target = tmp_path / "fetched.pkl"
     settings = get_settings().model_copy(
@@ -361,7 +358,7 @@ def test_download_rejects_an_html_sharing_page(tmp_path: Path, monkeypatch: pyte
             self.close()
 
     monkeypatch.setattr(
-        model_loader.urllib.request, "urlopen",
+        model_loader, "_urlopen",
         lambda *a, **k: HtmlResponse(b"<html>Sign in to download</html>"),
     )
 
@@ -392,10 +389,7 @@ def test_download_verifies_the_checksum(tmp_path: Path, monkeypatch: pytest.Monk
         def __exit__(self, *args: object) -> None:
             self.close()
 
-    monkeypatch.setattr(
-        model_loader.urllib.request, "urlopen",
-        lambda *a, **k: FakeResponse(payload),
-    )
+    monkeypatch.setattr(model_loader, "_urlopen", lambda *a, **k: FakeResponse(payload))
 
     base = {"model_url": "https://example.com/m.pkl"}
 
@@ -449,7 +443,7 @@ def test_download_sends_bearer_token_when_configured(
         captured["url"] = getattr(request, "full_url", None)
         return FakeResponse(b"weights")
 
-    monkeypatch.setattr(model_loader.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(model_loader, "_urlopen", fake_urlopen)
 
     with_token = get_settings().model_copy(
         update={
@@ -482,3 +476,36 @@ def test_presigned_signature_is_redacted_from_logs() -> None:
     assert _redact(url) == "https://bucket.r2.dev/model.pkl?<redacted>"
     assert "deadbeef" not in _redact(url)
     assert _redact("https://example.com/m.pkl") == "https://example.com/m.pkl"
+
+
+def test_auth_header_is_dropped_on_cross_host_redirect() -> None:
+    """A bearer token must not follow a redirect to a CDN on another domain.
+
+    Hugging Face answers an LFS download with a 302 to a signed CDN URL. The
+    signature already authorises that fetch, so forwarding the token would leak
+    it to a third party for no benefit.
+    """
+    import urllib.request
+
+    from app.model_loader import _SameHostAuthRedirectHandler
+
+    handler = _SameHostAuthRedirectHandler()
+
+    def redirect_to(target: str) -> urllib.request.Request | None:
+        request = urllib.request.Request("https://huggingface.co/u/r/resolve/main/m.pkl")
+        request.add_header("Authorization", "Bearer hf_secret")
+        return handler.redirect_request(request, None, 302, "Found", {}, target)
+
+    # Cross-host: token must be stripped.
+    cdn = redirect_to("https://us.aws.cdn.hf.co/repos/abc/m.pkl?X-Amz-Signature=xyz")
+    assert cdn is not None
+    assert not any(k.lower() == "authorization" for k in cdn.headers), (
+        "bearer token leaked to a third-party CDN host"
+    )
+
+    # Same host: token is still needed and must be preserved.
+    same = redirect_to("https://huggingface.co/api/resolve-cache/models/u/r/m.pkl")
+    assert same is not None
+    assert any(k.lower() == "authorization" for k in same.headers), (
+        "token dropped on a same-host redirect, which would break private repos"
+    )
