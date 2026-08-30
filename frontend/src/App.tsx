@@ -3,6 +3,7 @@ import { AnalyzeButton } from './components/AnalyzeButton';
 // import { DisclaimerBanner } from './components/DisclaimerBanner';
 import { ErrorAlert } from './components/ErrorAlert';
 import { ImagePreview } from './components/ImagePreview';
+import { InfoPanels } from './components/InfoPanels';
 import { ResultCard } from './components/ResultCard';
 import { UploadZone } from './components/UploadZone';
 import { usePrediction } from './hooks/usePrediction';
@@ -163,6 +164,8 @@ export default function App(): JSX.Element {
             )}
           </div>
         </div>
+
+        <InfoPanels />
       </main>
 
       <footer className="mx-auto max-w-5xl px-4 pb-10 sm:px-6">
