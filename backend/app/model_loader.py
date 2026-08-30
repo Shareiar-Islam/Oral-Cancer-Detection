@@ -299,6 +299,11 @@ def _titlecase(name: str) -> str:
 # --------------------------------------------------------------------------
 # Load
 # --------------------------------------------------------------------------
+def _redact(url: str) -> str:
+    """Strip the query string so a presigned URL's signature stays out of logs."""
+    return url.split("?", 1)[0] + ("?<redacted>" if "?" in url else "")
+
+
 def ensure_checkpoint(settings: Settings) -> Path:
     """Make sure MODEL_PATH exists, downloading from MODEL_URL if it does not.
 
@@ -321,12 +326,19 @@ def ensure_checkpoint(settings: Settings) -> Path:
             "direct-download link so it can be fetched at startup."
         )
 
-    logger.info("Checkpoint missing; downloading from %s", url)
+    logger.info("Checkpoint missing; downloading from %s", _redact(url))
     path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = path.with_suffix(path.suffix + ".part")
 
+    request = urllib.request.Request(url)
+    if settings.model_auth_token.strip():
+        # Private object stores, and Hugging Face private repos, need this.
+        # A presigned URL carries its own credentials and needs no header.
+        request.add_header("Authorization", f"Bearer {settings.model_auth_token.strip()}")
+        logger.info("Using MODEL_AUTH_TOKEN for the checkpoint download.")
+
     try:
-        with urllib.request.urlopen(url, timeout=300) as response:  # noqa: S310
+        with urllib.request.urlopen(request, timeout=300) as response:  # noqa: S310
             content_type = response.headers.get("Content-Type", "")
             if "text/html" in content_type:
                 raise ModelLoadError(
@@ -345,8 +357,9 @@ def ensure_checkpoint(settings: Settings) -> Path:
     except Exception as exc:  # noqa: BLE001
         temp_path.unlink(missing_ok=True)
         raise ModelLoadError(
-            f"Failed to download the checkpoint from MODEL_URL: "
-            f"{type(exc).__name__}: {exc}"
+            f"Failed to download the checkpoint from {_redact(url)}: "
+            f"{type(exc).__name__}: {exc}. "
+            "If the URL is private, set MODEL_AUTH_TOKEN."
         ) from exc
 
     expected = settings.model_sha256.strip().lower()

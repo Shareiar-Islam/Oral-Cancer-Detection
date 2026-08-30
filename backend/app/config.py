@@ -86,6 +86,12 @@ class Settings(BaseSettings):
     #   sha256sum backend/models/<your>.pkl
     model_sha256: str = ""
 
+    # Bearer token for a MODEL_URL that requires authentication -- a private
+    # Hugging Face repo, a private object store, or a private GitHub release
+    # asset. Sent as `Authorization: Bearer <token>`. Leave empty for a public
+    # or presigned URL. Set this in the host's dashboard, never in git.
+    model_auth_token: str = ""
+
     # --- server ------------------------------------------------------------
     # Render/Railway/Fly inject the port to bind. Read here so `python -m app`
     # and the Docker CMD agree; the Procfile passes it to uvicorn directly.

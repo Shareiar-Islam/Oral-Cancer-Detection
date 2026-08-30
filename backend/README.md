@@ -158,6 +158,7 @@ optional; defaults match the EXP-4A checkpoint.
 | `MODEL_PATH` | `models/EfficientNetB0_…EXP4A.pkl` | Checkpoint location. Relative paths resolve against `backend/`, **not** the working directory. |
 | `MODEL_URL` | *(empty)* | Direct-download link, fetched at startup when `MODEL_PATH` is absent. For deployment, where weights are gitignored. |
 | `MODEL_SHA256` | *(empty)* | Optional integrity check on that download. |
+| `MODEL_AUTH_TOKEN` | *(empty)* | Bearer token for a private `MODEL_URL`. Not needed for a presigned URL. |
 | `DEVICE` | `auto` | `auto` \| `cpu` \| `cuda`. `auto` uses CUDA when available. |
 | `THRESHOLD` | `0.5` | P(Cancer) at or above this is reported as Cancer. |
 | `POSITIVE_CLASS_INDEX` | `1` | Which index means Cancer. Verified against checkpoint metadata. |
@@ -397,17 +398,31 @@ logits where the two genuinely differ.
 Weights are gitignored, so a fresh deploy has no `.pkl`. Two options:
 
 **A. Fetch at boot (recommended).** Upload the file somewhere with a *direct*
-download link (GitHub release asset, S3, R2) and set:
+download link and set:
 
 ```
 MODEL_URL=https://…/EfficientNetB0_Dataset02_OralCancer_EXP4A.pkl
 MODEL_SHA256=1bba670b960ab3fd53160ce59d524d875093f2d19a3f79a37d3717d5b0e19ab4
+MODEL_AUTH_TOKEN=…        # only if the URL requires credentials
 ```
 
 It downloads to a `.part` file and renames only on success, so an interrupted
 transfer can never leave a truncated checkpoint. A Google Drive or Dropbox
 *sharing page* returns HTML rather than the file — this is detected and rejected
-with a clear message.
+with a clear message. Presigned-URL signatures are redacted from logs.
+
+Where to host it, if the weights should stay private:
+
+| Host | Notes |
+| --- | --- |
+| **Cloudflare R2** | No egress fees. Use an API token with `MODEL_AUTH_TOKEN`, or a presigned URL. |
+| **Backblaze B2** | Free tier covers 10 GB. Presigned URL or token. |
+| **Hugging Face** (private model repo) | `MODEL_URL=https://huggingface.co/<user>/<repo>/resolve/main/<file>.pkl` with a read token in `MODEL_AUTH_TOKEN`. |
+| **S3** | Presigned URLs expire (7 days max with SigV4) — the deploy breaks on the next cold start. Prefer a token. |
+
+> A **GitHub release asset on a public repo is public**, even though the file
+> isn't in git history. If the repo is public and the weights must not be, use
+> one of the above instead.
 
 **B. Commit the file.** 16 MB is well within GitHub limits, if you're comfortable
 having weights in git.
@@ -415,11 +430,42 @@ having weights in git.
 ### Render
 
 Blueprint at [`../render.yaml`](../render.yaml). Root directory `backend`,
-health check `/api/health`. Set `MODEL_URL`, `MODEL_SHA256`, and
-`ALLOWED_ORIGINS` (your Vercel URL) in the dashboard.
+health check `/api/health`. Set `MODEL_URL`, `MODEL_SHA256`,
+`MODEL_AUTH_TOKEN` (if needed) and `ALLOWED_ORIGINS` (your Vercel URL) in the
+dashboard — not in the blueprint, so they stay out of git.
 
-> The free tier's 512 MB RAM is too tight — torch alone approaches it before the
-> model loads. `render.yaml` specifies `starter`.
+#### Memory: the free tier does not fit
+
+Measured on this service, peak resident memory:
+
+| Stage | RSS |
+| --- | --- |
+| `import torch` | 268 MB |
+| `+ import torchvision.models` | 364 MB |
+| `+ build EfficientNet-B0` | 394 MB |
+| `+ unpickle checkpoint` | 427 MB |
+| `+ eval and warmup pass` | **~470 MB** |
+
+Decoding one 12-megapixel upload adds roughly 37 MB more (4032 × 3024 × 3
+bytes) before the tensor is built. Render's free tier is **512 MB total**, so
+the service either fails to start or is OOM-killed on the first large image.
+
+`OMP_NUM_THREADS=1`, `MKL_NUM_THREADS=1` and `MALLOC_ARENA_MAX=2` (set in
+`render.yaml`) trim thread-local allocator arenas and cut the *import* cost from
+364 MB to 268 MB, but the steady state stays near 470 MB — torch's own
+footprint dominates and cannot be configured away.
+
+Options, in order of effort:
+
+1. **Use Starter (2 GB).** The straightforward fix; `render.yaml` specifies it.
+2. **Lower `MAX_UPLOAD_MB` and downscale before upload.** Buys headroom at the
+   margin, not the ~470 MB baseline. Does not make the free tier viable on its
+   own.
+3. **Export to ONNX and serve with `onnxruntime`.** Drops the torch dependency
+   entirely — roughly 50–100 MB instead of 364 MB — and would fit comfortably in
+   512 MB. A real change: re-export the model, swap the loader and inference
+   path, and re-verify outputs match. Worth it only if free-tier hosting is a
+   hard requirement.
 
 ### Railway
 

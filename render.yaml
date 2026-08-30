@@ -9,7 +9,10 @@ services:
   - type: web
     name: oral-cancer-api
     runtime: python
-    plan: starter          # free tier's 512 MB RAM is too tight for torch
+    # MEASURED: ~470 MB resident with the model loaded, plus up to ~37 MB to
+    # decode a 12-megapixel upload. The free tier's 512 MB will OOM. Starter
+    # (2 GB) is the smallest plan with real headroom.
+    plan: starter
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
@@ -32,6 +35,22 @@ services:
         sync: false
       - key: MODEL_SHA256
         sync: false
+      # Only needed when MODEL_URL requires credentials (private bucket,
+      # private Hugging Face repo). A presigned URL needs no token.
+      - key: MODEL_AUTH_TOKEN
+        sync: false
+
+      # --- Memory ---------------------------------------------------------
+      # Measured footprint: ~470 MB resident with the model loaded, before
+      # request buffers. torch alone accounts for ~270 MB and torchvision a
+      # further ~95 MB. These trim thread-local arenas; they do not change the
+      # fact that this does not fit in a 512 MB instance (see plan, above).
+      - key: OMP_NUM_THREADS
+        value: "1"
+      - key: MKL_NUM_THREADS
+        value: "1"
+      - key: MALLOC_ARENA_MAX
+        value: "2"
       - key: ALLOWED_ORIGINS
         sync: false
       # Matches Vercel preview deployments, which get a new host per commit.

@@ -423,3 +423,62 @@ def test_cors_regex_is_included_when_set() -> None:
     pattern = r"https://myapp-.*\.vercel\.app"
     settings = get_settings().model_copy(update={"allowed_origin_regex": pattern})
     assert settings.cors_kwargs["allow_origin_regex"] == pattern
+
+
+def test_download_sends_bearer_token_when_configured(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A private MODEL_URL needs credentials; a presigned one does not."""
+    import io as _io
+
+    from app import model_loader
+
+    captured: dict[str, object] = {}
+
+    class FakeResponse(_io.BytesIO):
+        headers = {"Content-Type": "application/octet-stream"}
+
+        def __enter__(self) -> "FakeResponse":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            self.close()
+
+    def fake_urlopen(request: object, **kwargs: object) -> FakeResponse:
+        captured["headers"] = dict(getattr(request, "headers", {}))
+        captured["url"] = getattr(request, "full_url", None)
+        return FakeResponse(b"weights")
+
+    monkeypatch.setattr(model_loader.urllib.request, "urlopen", fake_urlopen)
+
+    with_token = get_settings().model_copy(
+        update={
+            "model_path": tmp_path / "a.pkl",
+            "model_url": "https://private.example.com/m.pkl",
+            "model_auth_token": "hf_secrettoken",
+        }
+    )
+    model_loader.ensure_checkpoint(with_token)
+    # urllib title-cases header names.
+    assert captured["headers"].get("Authorization") == "Bearer hf_secrettoken"
+
+    captured.clear()
+    without = get_settings().model_copy(
+        update={
+            "model_path": tmp_path / "b.pkl",
+            "model_url": "https://public.example.com/m.pkl?X-Amz-Signature=abc",
+            "model_auth_token": "",
+        }
+    )
+    model_loader.ensure_checkpoint(without)
+    assert "Authorization" not in captured["headers"]
+
+
+def test_presigned_signature_is_redacted_from_logs() -> None:
+    """A presigned URL's signature must never reach the log stream."""
+    from app.model_loader import _redact
+
+    url = "https://bucket.r2.dev/model.pkl?X-Amz-Signature=deadbeefsecret&X-Amz-Expires=604800"
+    assert _redact(url) == "https://bucket.r2.dev/model.pkl?<redacted>"
+    assert "deadbeef" not in _redact(url)
+    assert _redact("https://example.com/m.pkl") == "https://example.com/m.pkl"
