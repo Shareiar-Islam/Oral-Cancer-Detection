@@ -90,7 +90,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "HEAD", "POST"],
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],
     **settings.cors_kwargs,  # allow_origins, plus allow_origin_regex if set
@@ -180,10 +180,21 @@ async def _predict_bytes(data: bytes, filename: str, request_id: str) -> Predict
 # --------------------------------------------------------------------------
 # Routes
 # --------------------------------------------------------------------------
-@app.get("/api/health", response_model=HealthResponse, tags=["system"])
+@app.api_route(
+    "/api/health",
+    methods=["GET", "HEAD"],
+    response_model=HealthResponse,
+    tags=["system"],
+)
 async def health() -> HealthResponse:
     """Liveness + model readiness. Always 200 so the frontend can distinguish
-    'backend down' (network error) from 'backend up, model broken'."""
+    'backend down' (network error) from 'backend up, model broken'.
+
+    HEAD is registered explicitly. Starlette derives HEAD from GET, but
+    FastAPI's APIRoute does not -- and uptime monitors (UptimeRobot among
+    them) probe with HEAD by default, so a GET-only route answers the
+    keep-warm ping with 405 and the instance is left to spin down anyway.
+    """
     loaded = model_loader.is_loaded()
     return HealthResponse(
         status="ok" if loaded else "degraded",
