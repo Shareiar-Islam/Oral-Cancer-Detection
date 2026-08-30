@@ -509,3 +509,31 @@ def test_auth_header_is_dropped_on_cross_host_redirect() -> None:
     assert any(k.lower() == "authorization" for k in same.headers), (
         "token dropped on a same-host redirect, which would break private repos"
     )
+
+
+def test_torch_threads_are_pinned_at_load(tmp_path: Path) -> None:
+    """Thread count must be applied before the warmup pass.
+
+    Torch sizes its pool on first use, so setting this after any tensor work
+    is too late. On a fractional-CPU host an unpinned pool causes cgroup
+    throttling and a forward pass orders of magnitude slower than it should be.
+    """
+    import torch
+
+    from torchvision import models
+
+    path = tmp_path / "threads.pkl"
+    model = models.efficientnet_b0(weights=None)
+    model.classifier[1] = nn.Linear(1280, 1)
+    with path.open("wb") as fh:
+        pickle.dump({"state_dict": model.state_dict()}, fh)
+
+    original = torch.get_num_threads()
+    try:
+        settings = get_settings().model_copy(
+            update={"model_path": path, "torch_num_threads": 1}
+        )
+        load_model(settings)
+        assert torch.get_num_threads() == 1
+    finally:
+        torch.set_num_threads(original)

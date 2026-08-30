@@ -45,6 +45,20 @@ class Settings(BaseSettings):
     )
     device: Literal["auto", "cpu", "cuda"] = "auto"
 
+    # Torch intra-op threads. Default 1, which matters far more than it looks.
+    #
+    # Hosts like Render give a fractional CPU enforced by a cgroup quota, while
+    # still reporting the host's full core count. Torch sizes its thread pool
+    # from that count, so it spawns 4-8 workers against (say) 0.5 of a core:
+    # each scheduling period the container exhausts its quota almost
+    # immediately and is then throttled for the remainder. The result is a
+    # forward pass measured in seconds rather than tens of milliseconds.
+    #
+    # Set in code rather than relying on OMP_NUM_THREADS, so a dashboard that
+    # was configured by hand cannot silently miss it. Raise it only if the
+    # instance genuinely has whole cores to spare.
+    torch_num_threads: int = Field(default=1, ge=1, le=64)
+
     # --- decision layer ----------------------------------------------------
     threshold: float = Field(default=0.5, ge=0.0, le=1.0)
 

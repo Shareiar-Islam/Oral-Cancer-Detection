@@ -6,6 +6,19 @@ interface ResultCardProps {
   result: PredictionResponse;
 }
 
+/** 42 ms stays milliseconds; 4198 ms reads better as 4.2 s. */
+function formatDuration(ms: number): { value: string; unit: string } {
+  if (ms < 1000) return { value: ms.toFixed(0), unit: 'ms' };
+  return { value: (ms / 1000).toFixed(1), unit: 's' };
+}
+
+/** A probability is easier to weigh as a percentage than as 0.039882. */
+function formatPercent(p: number): string {
+  if (p > 0 && p < 0.01) return '<1%';
+  if (p < 1 && p > 0.99) return '>99%';
+  return `${(p * 100).toFixed(p * 100 < 10 ? 1 : 0)}%`;
+}
+
 function DetailRow({ label, value }: { label: string; value: string }): JSX.Element {
   return (
     <div className="flex items-baseline justify-between gap-4 py-2">
@@ -19,7 +32,7 @@ function StatTile({ label, value, unit }: { label: string; value: string; unit?:
   return (
     <div className="rounded-2xl bg-canvas/60 px-4 py-3.5 ring-1 ring-inset ring-line">
       <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-faint">{label}</p>
-      <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums text-ink">
+      <p className="mt-1.5 truncate font-mono text-lg font-semibold tabular-nums text-ink">
         {value}
         {unit && <span className="ml-1 text-xs font-normal text-faint">{unit}</span>}
       </p>
@@ -84,12 +97,13 @@ export function ResultCard({ result }: ResultCardProps): JSX.Element {
                 : 'bg-canvas text-accent ring-accent/30'
             }`}
           >
-            {(result.confidence * 100).toFixed(1)}% confident
+            {formatPercent(result.confidence)} confident
           </span>
         </div>
 
         <p className="mt-3 text-xs leading-relaxed text-faint">
-          Confidence in this classification · Screening support, not a diagnosis
+          Estimated {formatPercent(result.probability)} likelihood of cancer ·
+          Screening support, not a diagnosis
         </p>
       </div>
 
@@ -100,9 +114,17 @@ export function ResultCard({ result }: ResultCardProps): JSX.Element {
           isPositive={isPositive}
         />
 
-        <div className="grid grid-cols-2 gap-3">
-          <StatTile label="Confidence" value={result.confidence.toFixed(2)} />
-          <StatTile label="Inference" value={result.inference_time_ms.toFixed(0)} unit="ms" />
+        <div className="grid grid-cols-3 gap-3">
+          <StatTile label="Confidence" value={formatPercent(result.confidence)} />
+          <StatTile
+            label="Image"
+            value={`${result.image.original_size[0]}×${result.image.original_size[1]}`}
+          />
+          <StatTile
+            label="Analysed in"
+            value={formatDuration(result.inference_time_ms).value}
+            unit={formatDuration(result.inference_time_ms).unit}
+          />
         </div>
 
         <div className="border-t border-line-soft pt-4">

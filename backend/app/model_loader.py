@@ -500,6 +500,8 @@ def load_model(settings: Settings | None = None) -> tuple[nn.Module, ModelInfo]:
     path = ensure_checkpoint(settings)
     device = settings.resolved_device
 
+    _configure_threads(settings)
+
     logger.info("Loading checkpoint %s onto %s", path, device)
     obj, load_method = _load_raw(path, device)
 
@@ -651,6 +653,30 @@ def _apply_checkpoint_metadata(info: ModelInfo, meta: dict[str, Any], settings: 
         raise ModelLoadError(
             f"POSITIVE_CLASS_INDEX={info.positive_class_index} is out of range "
             f"for class mapping {info.class_names}."
+        )
+
+
+def _configure_threads(settings: Settings) -> None:
+    """Pin torch's thread pools before any tensor work happens.
+
+    Must run before the warmup pass, since the pool is sized on first use.
+    """
+    requested = settings.torch_num_threads
+    detected = torch.get_num_threads()
+    torch.set_num_threads(requested)
+    try:
+        # Inter-op parallelism can only be set before any parallel work starts.
+        torch.set_num_interop_threads(requested)
+    except RuntimeError:
+        pass  # already initialised; the intra-op setting is the one that matters
+
+    if detected != requested:
+        logger.info(
+            "Torch threads set to %d (was %d). On a fractional-CPU host, more "
+            "threads than available CPU causes cgroup throttling and a forward "
+            "pass orders of magnitude slower than it should be.",
+            requested,
+            detected,
         )
 
 

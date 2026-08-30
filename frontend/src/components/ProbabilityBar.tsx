@@ -30,7 +30,7 @@ export function ProbabilityBar({
           P(Cancer)
         </span>
         <span className="font-mono text-sm font-semibold tabular-nums text-ink">
-          {probability.toFixed(2)}
+          {probability.toFixed(3)}
         </span>
       </div>
 
